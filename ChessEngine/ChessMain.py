@@ -1,4 +1,3 @@
-# importing required libraries
 import pygame
 import chess
 import math
@@ -232,7 +231,6 @@ def main_one_agent(BOARD, agent, agent_color):
 def main_two_agent(BOARD, agent1, agent_color1, agent2):
     '''
     for ai vs ai game
-
     '''
 
     # make background black
@@ -271,6 +269,6 @@ def main_two_agent(BOARD, agent1, agent_color1, agent2):
     pygame.quit()
 
 
-ai= most_value_agent(b)
+# ai= most_value_agent(b)
 
-main_one_agent(b,ai,False)
+# main_one_agent(b,ai,False)
