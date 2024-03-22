@@ -49,3 +49,33 @@ def most_value_agent(BOARD):
         best_move = moves[scores.index(min(scores))]
 
     return best_move
+
+def min_max3(BOARD,N):
+    moves = list(BOARD.legal_moves)
+    scores = []
+
+    for move in moves:
+        temp = deepcopy(BOARD)
+        temp.push(move)
+
+        if N>1:
+            temp_best_move = min_max3(temp,3-1)
+            temp.push(temp_best_move)
+
+        scores.append(eval_board(temp))
+
+    if BOARD.turn == True:
+       
+        best_move = moves[scores.index(max(scores))]
+
+    else:
+        best_move = moves[scores.index(min(scores))]
+
+    return best_move
+        
+# a simple wrapper function as the display only gives one imput , BOARD
+# def play_min_maxN(BOARD):
+#     N=3
+#     return min_maxN(BOARD,N)
+
+main_one_agent()
