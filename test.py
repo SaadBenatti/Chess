@@ -331,16 +331,41 @@ def minimax_agent(board):
     beta = float('inf')
     for move in board.legal_moves:
         board.push(move)
-        board_value = minimax(board, 4, alpha, beta, False)
+        board_value = minimax(board, 3, alpha, beta, False)
         board.pop()
         if board_value > best_value:
             best_value = board_value
             best_move = move
     return best_move
 
+# Menu functions
+def draw_menu(scrn):
+    scrn.fill(BLACK)
+    font = pygame.font.Font(None, 74)
+    text1 = font.render('1. Minimax AI', True, WHITE)
+    text2 = font.render('2. MCTS AI', True, WHITE)
+    scrn.blit(text1, (200, 300))
+    scrn.blit(text2, (200, 400))
+    pygame.display.flip()
 
-
+def main_menu():
+    menu = True
+    while menu:
+        draw_menu(scrn)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_1:
+                    return minimax_agent
+                elif event.key == pygame.K_2:
+                    return mcts_agent
 if __name__ == "__main__":
+    selected_agent = main_menu()
+    main_one_agent(b, selected_agent, True)
+
+#if __name__ == "__main__":
     # Choose your agent function here: minimax_agent or mcts_agent
-    main_one_agent(b, minimax_agent, True)  # Example: Minimax as White agent
-    # main_one_agent(b, mcts_agent, True)  # Example: MCTS as White agent
+    #main_one_agent(b, minimax_agent, True)  # Example: Minimax as White agent
+    #ain_one_agent(b, mcts_agent, True)  # Example: MCTS as White agent
