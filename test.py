@@ -2,6 +2,7 @@
 import pygame
 import chess
 import math
+import random
 
 
 #initialise display
@@ -60,7 +61,6 @@ def update(scrn,board):
         pygame.draw.line(scrn,WHITE,(i*100,0),(i*100,800))
 
     pygame.display.flip()
-
 
 
 def main(BOARD):
@@ -277,4 +277,70 @@ def main_two_agent(BOARD,agent1,agent_color1,agent2):
     pygame.quit()
 
 
-main(b)
+def minimax(board, depth, alpha, beta, maximizing_player):
+    if depth == 0 or board.is_game_over():
+        return evaluate_board(board)
+
+    legal_moves = list(board.legal_moves)
+    if maximizing_player:
+        max_eval = float('-inf')
+        for move in legal_moves:
+            board.push(move)
+            eval = minimax(board, depth - 1, alpha, beta, False)
+            board.pop()
+            max_eval = max(max_eval, eval)
+            alpha = max(alpha, eval)
+            if beta <= alpha:
+                break
+        return max_eval
+    else:
+        min_eval = float('inf')
+        for move in legal_moves:
+            board.push(move)
+            eval = minimax(board, depth - 1, alpha, beta, True)
+            board.pop()
+            min_eval = min(min_eval, eval)
+            beta = min(beta, eval)
+            if beta <= alpha:
+                break
+        return min_eval
+
+def evaluate_board(board):
+    # Basic evaluation function
+    if board.is_checkmate():
+        if board.turn:
+            return -9999
+        else:
+            return 9999
+    elif board.is_stalemate():
+        return 0
+    elif board.is_insufficient_material():
+        return 0
+    else:
+        return sum(piece_value[piece.symbol()] for piece in board.piece_map().values())
+
+piece_value = {
+    'p': -1, 'n': -3, 'b': -3, 'r': -5, 'q': -9, 'k': 0,
+    'P': 1, 'N': 3, 'B': 3, 'R': 5, 'Q': 9, 'K': 0
+}
+
+def minimax_agent(board):
+    best_move = None
+    best_value = float('-inf')
+    alpha = float('-inf')
+    beta = float('inf')
+    for move in board.legal_moves:
+        board.push(move)
+        board_value = minimax(board, 4, alpha, beta, False)
+        board.pop()
+        if board_value > best_value:
+            best_value = board_value
+            best_move = move
+    return best_move
+
+
+
+if __name__ == "__main__":
+    # Choose your agent function here: minimax_agent or mcts_agent
+    main_one_agent(b, minimax_agent, True)  # Example: Minimax as White agent
+    # main_one_agent(b, mcts_agent, True)  # Example: MCTS as White agent
