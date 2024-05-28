@@ -3,6 +3,7 @@ import pygame
 import chess
 import math
 import random
+import hashlib
 
 two_users=False
 two_ai=False
@@ -339,6 +340,74 @@ def minimax_agent(board):
             best_move = move
     return best_move
 
+class Node:
+    def __init__(self, board, parent=None):
+        self.board = board
+        self.parent = parent
+        self.children = []
+        self.visits = 0
+        self.wins = 0
+        self.hash = self.hash_board(board)
+
+    @staticmethod
+    def hash_board(board):
+        return hashlib.md5(board.fen().encode('utf-8')).hexdigest()
+
+def select(node):
+    while node.children:
+        node = max(node.children, key=lambda n: ucb1(n, node.visits))
+    return node
+
+def ucb1(node, parent_visits, exploration_const=math.sqrt(2)):
+    if node.visits == 0:
+        return float('inf')
+    return node.wins / node.visits + exploration_const * math.sqrt(math.log(parent_visits) / node.visits)
+
+def expand(node, transposition_table):
+    legal_moves = list(node.board.legal_moves)
+    for move in legal_moves:
+        new_board = node.board.copy()
+        new_board.push(move)
+        new_node = Node(new_board, node)
+        if new_node.hash in transposition_table:
+            new_node = transposition_table[new_node.hash]
+            new_node.parent = node
+        else:
+            transposition_table[new_node.hash] = new_node
+        node.children.append(new_node)
+
+def simulate(board):
+    while not board.is_game_over():
+        legal_moves = list(board.legal_moves)
+        if not legal_moves:
+            break
+        move = random.choice(legal_moves)
+        board.push(move)
+    if board.is_checkmate():
+        return 1 if not board.turn else -1
+    return 0
+
+def backpropagate(node, result):
+    while node:
+        node.visits += 1
+        node.wins += result
+        node = node.parent
+
+def mcts(board, iterations):
+    root = Node(board)
+    transposition_table = {root.hash: root}
+    for _ in range(iterations):
+        node = select(root)
+        if not node.board.is_game_over():
+            expand(node, transposition_table)
+            node = random.choice(node.children)
+        result = simulate(node.board.copy())
+        backpropagate(node, result)
+    return max(root.children, key=lambda n: n.visits).board.peek()
+
+def mcts_agent(board):
+    return mcts(board, 1000)  # Adjust the number of iterations as needed
+
 # Menu functions
 def draw_menu(scrn):
     scrn.fill(BLACK)
@@ -363,23 +432,25 @@ def main_menu():
                 exit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_1:
-                    return minimax_agent
+                    return 'minimax'
                 elif event.key == pygame.K_2:
-                    return mcts_agent
+                    return 'mcts'
                 elif event.key == pygame.K_3:
-                    global two_ai
-                    two_ai=True
+                    return 'ai_vs_ai'
                 elif event.key == pygame.K_4:
-                    global two_users
-                    two_users=True
+                    return 'user_vs_user'
+
 if __name__ == "__main__":
-    if two_ai:
+    game_mode = main_menu()
+    
+    if game_mode == 'ai_vs_ai':
         main_two_agent(b, minimax_agent, True, mcts_agent)
-    elif two_users:
+    elif game_mode == 'user_vs_user':
         main(b)
-    else:
-        selected_agent = main_menu()
-        main_one_agent(b, selected_agent, False)
+    elif game_mode == 'minimax':
+        main_one_agent(b, minimax_agent, False)
+    elif game_mode == 'mcts':
+        main_one_agent(b, mcts_agent, False)
 
 #if __name__ == "__main__":
     # Choose your agent function here: minimax_agent or mcts_agent

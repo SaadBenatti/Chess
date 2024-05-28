@@ -4,7 +4,8 @@ import chess
 import math
 import random
 
-
+two_users=False
+two_ai=False
 #initialise display
 
 # Set the size of the window to match the image size
@@ -331,16 +332,113 @@ def minimax_agent(board):
     beta = float('inf')
     for move in board.legal_moves:
         board.push(move)
-        board_value = minimax(board, 4, alpha, beta, False)
+        board_value = minimax(board, 3, alpha, beta, False)
         board.pop()
         if board_value > best_value:
             best_value = board_value
             best_move = move
     return best_move
 
+class Node:
+    def __init__(self, board, parent=None):
+        self.board = board
+        self.parent = parent
+        self.children = []
+        self.visits = 0
+        self.wins = 0
 
+def select(node):
+    while node.children:
+        node = max(node.children, key=lambda n: ucb1(n, node.visits))
+    return node
+
+def ucb1(node, parent_visits):
+    if node.visits == 0:
+        return float('inf')
+    return node.wins / node.visits + math.sqrt(2 * math.log(parent_visits) / node.visits)
+
+def expand(node):
+    legal_moves = list(node.board.legal_moves)
+    for move in legal_moves:
+        new_board = node.board.copy()
+        new_board.push(move)
+        node.children.append(Node(new_board, node))
+
+def simulate(board):
+    while not board.is_game_over():
+        legal_moves = list(board.legal_moves)
+        if not legal_moves:
+            break
+        move = random.choice(legal_moves)
+        board.push(move)
+    if board.is_checkmate():
+        return 1 if not board.turn else -1
+    return 0
+
+def backpropagate(node, result):
+    while node:
+        node.visits += 1
+        node.wins += result
+        node = node.parent
+
+def mcts(board, iterations):
+    root = Node(board)
+    for _ in range(iterations):
+        node = select(root)
+        if not node.board.is_game_over():
+            expand(node)
+            node = random.choice(node.children)
+        result = simulate(node.board.copy())
+        backpropagate(node, result)
+    return max(root.children, key=lambda n: n.visits).board.peek()
+
+def mcts_agent(board):
+    return mcts(board, 100)  # Adjust the number of iterations as needed
+# Menu functions
+def draw_menu(scrn):
+    scrn.fill(BLACK)
+    font = pygame.font.Font(None, 74)
+    text1 = font.render('1. Minimax AI', True, WHITE)
+    text2 = font.render('2. MCTS AI', True, WHITE)
+    text3 = font.render('3. AI vs AI', True, WHITE)
+    text4 = font.render('4. User vs User', True, WHITE)
+    scrn.blit(text1, (200, 200))
+    scrn.blit(text2, (200, 300))
+    scrn.blit(text3, (200, 400))
+    scrn.blit(text4, (200, 500))
+    pygame.display.flip()
+
+def main_menu():
+    menu = True
+    while menu:
+        draw_menu(scrn)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_1:
+                    return 'minimax'
+                elif event.key == pygame.K_2:
+                    return 'mcts'
+                elif event.key == pygame.K_3:
+                    return 'ai_vs_ai'
+                elif event.key == pygame.K_4:
+                    return 'user_vs_user'
 
 if __name__ == "__main__":
+    game_mode = main_menu()
+    
+    if game_mode == 'ai_vs_ai':
+        main_two_agent(b, minimax_agent, True, mcts_agent)
+    elif game_mode == 'user_vs_user':
+        main(b)
+    elif game_mode == 'minimax':
+        main_one_agent(b, minimax_agent, False)
+    elif game_mode == 'mcts':
+        main_one_agent(b, mcts_agent, False)
+
+#if __name__ == "__main__":
     # Choose your agent function here: minimax_agent or mcts_agent
-    main_one_agent(b, minimax_agent, True)  # Example: Minimax as White agent
-    # main_one_agent(b, mcts_agent, True)  # Example: MCTS as White agent
+    #main_one_agent(b, minimax_agent, True)  # Example: Minimax as White agent
+    #ain_one_agent(b, mcts_agent, True)  # Example: MCTS as White agent
