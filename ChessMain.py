@@ -4,8 +4,7 @@ import chess
 import math
 import random
 
-two_users=False
-two_ai=False
+
 #initialise display
 
 # Set the size of the window to match the image size
@@ -437,8 +436,3 @@ if __name__ == "__main__":
         main_one_agent(b, minimax_agent, False)
     elif game_mode == 'mcts':
         main_one_agent(b, mcts_agent, False)
-
-#if __name__ == "__main__":
-    # Choose your agent function here: minimax_agent or mcts_agent
-    #main_one_agent(b, minimax_agent, True)  # Example: Minimax as White agent
-    #ain_one_agent(b, mcts_agent, True)  # Example: MCTS as White agent
