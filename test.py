@@ -4,7 +4,8 @@ import chess
 import math
 import random
 
-
+two_users=False
+two_ai=False
 #initialise display
 
 # Set the size of the window to match the image size
@@ -344,8 +345,12 @@ def draw_menu(scrn):
     font = pygame.font.Font(None, 74)
     text1 = font.render('1. Minimax AI', True, WHITE)
     text2 = font.render('2. MCTS AI', True, WHITE)
-    scrn.blit(text1, (200, 300))
-    scrn.blit(text2, (200, 400))
+    text3 = font.render('3. AI vs AI', True, WHITE)
+    text4 = font.render('4. User vs User', True, WHITE)
+    scrn.blit(text1, (200, 200))
+    scrn.blit(text2, (200, 300))
+    scrn.blit(text3, (200, 400))
+    scrn.blit(text4, (200, 500))
     pygame.display.flip()
 
 def main_menu():
@@ -361,9 +366,20 @@ def main_menu():
                     return minimax_agent
                 elif event.key == pygame.K_2:
                     return mcts_agent
+                elif event.key == pygame.K_3:
+                    global two_ai
+                    two_ai=True
+                elif event.key == pygame.K_4:
+                    global two_users
+                    two_users=True
 if __name__ == "__main__":
-    selected_agent = main_menu()
-    main_one_agent(b, selected_agent, True)
+    if two_ai:
+        main_two_agent(b, minimax_agent, True, mcts_agent)
+    elif two_users:
+        main(b)
+    else:
+        selected_agent = main_menu()
+        main_one_agent(b, selected_agent, False)
 
 #if __name__ == "__main__":
     # Choose your agent function here: minimax_agent or mcts_agent
