@@ -3,6 +3,8 @@ import pygame
 import chess
 import math
 import random
+import numpy as np
+from collections import defaultdict
 
 
 #initialise display
@@ -41,247 +43,135 @@ pieces = {'p': pygame.image.load('b_pawn.png').convert_alpha(),
           
           }
 
-def update(scrn,board):
+def update(scrn, board, highlight_squares=[]):
     '''
     updates the screen basis the board class
     '''
-    # Blit the chessboard image
     scrn.blit(chessboard_image, (0, 0))
-
     for i in range(64):
         piece = board.piece_at(i)
-        if piece == None:
-            pass
-        else:
-            scrn.blit(pieces[str(piece)],((i%8)*100,700-(i//8)*100))
-    
+        if piece:
+            scrn.blit(pieces[str(piece)], ((i % 8) * 100, 700 - (i // 8) * 100))
     for i in range(7):
-        i=i+1
-        pygame.draw.line(scrn,WHITE,(0,i*100),(800,i*100))
-        pygame.draw.line(scrn,WHITE,(i*100,0),(i*100,800))
-
+        i += 1
+        pygame.draw.line(scrn, WHITE, (0, i * 100), (800, i * 100))
+        pygame.draw.line(scrn, WHITE, (i * 100, 0), (i * 100, 800))
+    for square in highlight_squares:
+        TX1 = 100 * (square % 8)
+        TY1 = 100 * (7 - square // 8)
+        pygame.draw.rect(scrn, BLUE, pygame.Rect(TX1, TY1, 100, 100), 5)
     pygame.display.flip()
 
 
 def main(BOARD):
-
     '''
     for human vs human game
     '''
-    #make background black
     scrn.fill(GREY)
-    #name window
     pygame.display.set_caption('Chess')
-    
-    #variable to be used later
     index_moves = []
-
     status = True
-    while (status):
-        #update screen
-        update(scrn,BOARD)
-
+    while status:
+        update(scrn, BOARD, index_moves)
         for event in pygame.event.get():
-     
-            # if event object type is QUIT
-            # then quitting the pygame
-            # and program both.
             if event.type == pygame.QUIT:
                 status = False
-
-            # if mouse clicked
             if event.type == pygame.MOUSEBUTTONDOWN:
-                #remove previous highlights
-                scrn.fill(BLACK)
-                #get position of mouse
                 pos = pygame.mouse.get_pos()
-
-                #find which square was clicked and index of it
-                square = (math.floor(pos[0]/100),math.floor(pos[1]/100))
-                index = (7-square[1])*8+(square[0])
-                
-                # if we are moving a piece
-                if index in index_moves: 
-                    
+                square = (math.floor(pos[0] / 100), math.floor(pos[1] / 100))
+                index = (7 - square[1]) * 8 + square[0]
+                if index in index_moves:
                     move = moves[index_moves.index(index)]
-                    
                     BOARD.push(move)
-
-                    #reset index and moves
-                    index=None
                     index_moves = []
-                    
-                    
-                # show possible moves
                 else:
-                    #check the square that is clicked
                     piece = BOARD.piece_at(index)
-                    #if empty pass
-                    if piece == None:
-                        
-                        pass
-                    else:
-                        
-                        #figure out what moves this piece can make
+                    if piece:
                         all_moves = list(BOARD.legal_moves)
-                        moves = []
-                        for m in all_moves:
-                            if m.from_square == index:
-                    
-                                moves.append(m)
-                                t = m.to_square
-                                TX1 = 100*(t%8)
-                                TY1 = 100*(7-t//8)
-                                #highlight squares it can move to
-                                pygame.draw.rect(scrn,BLUE,pygame.Rect(TX1,TY1,100,100),5)
-                        
-                        index_moves = [a.to_square for a in moves]
-     
-    # deactivates the pygame library
-        if BOARD.outcome() != None:
+                        moves = [m for m in all_moves if m.from_square == index]
+                        index_moves = [m.to_square for m in moves]
+        if BOARD.outcome():
             print(BOARD.outcome())
             status = False
             print(BOARD)
     pygame.quit()
 
-def main_one_agent(BOARD,agent,agent_color):
-    
-    '''
-    for agent vs human game
-    color is True = White agent
-    color is False = Black agent
-    '''
-    
-    #make background black
+def main_one_agent(BOARD, agent, agent_color):
     scrn.fill(BLACK)
-    #name window
     pygame.display.set_caption('Chess')
-    
-    #variable to be used later
     index_moves = []
-
     status = True
-    while (status):
-        #update screen
-        update(scrn,BOARD)
-        
-     
-        if BOARD.turn==agent_color:
+    while status:
+        update(scrn, BOARD, index_moves)
+        if BOARD.turn == agent_color:
             BOARD.push(agent(BOARD))
-            scrn.fill(BLACK)
-
+            index_moves = []
         else:
-
             for event in pygame.event.get():
-         
-                # if event object type is QUIT
-                # then quitting the pygame
-                # and program both.
                 if event.type == pygame.QUIT:
                     status = False
-
-                # if mouse clicked
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    #reset previous screen from clicks
-                    scrn.fill(BLACK)
-                    #get position of mouse
                     pos = pygame.mouse.get_pos()
-
-                    #find which square was clicked and index of it
-                    square = (math.floor(pos[0]/100),math.floor(pos[1]/100))
-                    index = (7-square[1])*8+(square[0])
-                    
-                    # if we have already highlighted moves and are making a move
-                    if index in index_moves: 
-                        
+                    square = (math.floor(pos[0] / 100), math.floor(pos[1] / 100))
+                    index = (7 - square[1]) * 8 + square[0]
+                    if index in index_moves:
                         move = moves[index_moves.index(index)]
-                        #print(BOARD)
-                        #print(move)
                         BOARD.push(move)
-                        index=None
                         index_moves = []
-                        
-                    # show possible moves
                     else:
-                        
                         piece = BOARD.piece_at(index)
-                        
-                        if piece == None:
-                            
-                            pass
-                        else:
-
+                        if piece:
                             all_moves = list(BOARD.legal_moves)
-                            moves = []
-                            for m in all_moves:
-                                if m.from_square == index:
-                                    
-                                    moves.append(m)
-
-                                    t = m.to_square
-
-                                    TX1 = 100*(t%8)
-                                    TY1 = 100*(7-t//8)
-
-                                    
-                                    pygame.draw.rect(scrn,BLUE,pygame.Rect(TX1,TY1,100,100),5)
-                            #print(moves)
-                            index_moves = [a.to_square for a in moves]
-     
-    # deactivates the pygame library
-        if BOARD.outcome() != None:
+                            moves = [m for m in all_moves if m.from_square == index]
+                            index_moves = [m.to_square for m in moves]
+        if BOARD.outcome():
             print(BOARD.outcome())
             status = False
             print(BOARD)
     pygame.quit()
 
-def main_two_agent(BOARD,agent1,agent_color1,agent2):
-    '''
-    for agent vs agent game
-    
-    '''
-  
-    #make background black
+def main_two_agent(BOARD, agent1, agent_color1, agent2):
     scrn.fill(BLACK)
-    #name window
     pygame.display.set_caption('Chess')
-    
-    #variable to be used later
-
     status = True
-    while (status):
-        #update screen
-        update(scrn,BOARD)
-        
-        if BOARD.turn==agent_color1:
+    while status:
+        update(scrn, BOARD)
+        if BOARD.turn == agent_color1:
             BOARD.push(agent1(BOARD))
-
         else:
             BOARD.push(agent2(BOARD))
-
-        scrn.fill(BLACK)
-            
         for event in pygame.event.get():
-     
-            # if event object type is QUIT
-            # then quitting the pygame
-            # and program both.
             if event.type == pygame.QUIT:
                 status = False
-     
-    # deactivates the pygame library
-        if BOARD.outcome() != None:
+        if BOARD.outcome():
             print(BOARD.outcome())
             status = False
             print(BOARD)
     pygame.quit()
+    
+# Transposition table for caching evaluations
+transposition_table = {}
 
+
+def order_moves(board, moves):
+    """
+    Orders moves to improve alpha-beta pruning.
+    Prioritize captures and checks.
+    """
+    def move_value(move):
+        if board.is_capture(move):
+            return 10  # High priority for captures
+        if board.gives_check(move):
+            return 5  # Medium priority for checks
+        return 0  # Low priority otherwise
+
+    return sorted(moves, key=move_value, reverse=True)
 
 def minimax(board, depth, alpha, beta, maximizing_player):
     if depth == 0 or board.is_game_over():
-        return evaluate_board(board)
-
-    legal_moves = list(board.legal_moves)
+        return enhanced_evaluate_board(board)
+    
+    legal_moves = order_moves(board, list(board.legal_moves))
     if maximizing_player:
         max_eval = float('-inf')
         for move in legal_moves:
@@ -304,32 +194,158 @@ def minimax(board, depth, alpha, beta, maximizing_player):
             if beta <= alpha:
                 break
         return min_eval
-
-def evaluate_board(board):
-    # Basic evaluation function
+    
+def enhanced_evaluate_board(board):
+    """
+    Improved evaluation function that considers positional and strategic factors.
+    """
     if board.is_checkmate():
-        if board.turn:
-            return -9999
-        else:
-            return 9999
-    elif board.is_stalemate():
+        return -9999 if board.turn else 9999
+    if board.is_stalemate() or board.is_insufficient_material():
         return 0
-    elif board.is_insufficient_material():
-        return 0
-    else:
-        return sum(piece_value[piece.symbol()] for piece in board.piece_map().values())
+    
+    score = 0
+    for square, piece in board.piece_map().items():
+        value = piece_value[piece.symbol()]
+        position_bonus = piece_square_tables[piece.symbol()][square]
+        score += value + position_bonus
+    return score
 
 piece_value = {
-    'p': -1, 'n': -3, 'b': -3, 'r': -5, 'q': -9, 'k': 0,
-    'P': 1, 'N': 3, 'B': 3, 'R': 5, 'Q': 9, 'K': 0
+    'p': 1, 'n': 3, 'b': 3.25, 'r': 5, 'q': 9, 'k': 0,
+    'P': -1, 'N': -3, 'B': -3.25, 'R': -5, 'Q': -9, 'K': 0
 }
+
+piece_square_tables = {
+    'P': [
+        0, 0, 0, 0, 0, 0, 0, 0,
+        5, 5, 5, 5, 5, 5, 5, 5,
+        1, 1, 2, 3, 3, 2, 1, 1,
+        0.5, 0.5, 1, 2.5, 2.5, 1, 0.5, 0.5,
+        0, 0, 0, 2, 2, 0, 0, 0,
+        0.5, -0.5, -1, 0, 0, -1, -0.5, 0.5,
+        0.5, 1, 1, -2, -2, 1, 1, 0.5,
+        0, 0, 0, 0, 0, 0, 0, 0
+    ],
+    'N': [
+        -5, -4, -3, -3, -3, -3, -4, -5,
+        -4, -2, 0, 0, 0, 0, -2, -4,
+        -3, 0, 1, 1.5, 1.5, 1, 0, -3,
+        -3, 0.5, 1.5, 2, 2, 1.5, 0.5, -3,
+        -3, 0, 1.5, 2, 2, 1.5, 0, -3,
+        -3, 0.5, 1, 1.5, 1.5, 1, 0.5, -3,
+        -4, -2, 0, 0.5, 0.5, 0, -2, -4,
+        -5, -4, -3, -3, -3, -3, -4, -5
+    ],
+    'B': [
+        -2, -1, -1, -1, -1, -1, -1, -2,
+        -1, 0, 0, 0, 0, 0, 0, -1,
+        -1, 0, 0.5, 1, 1, 0.5, 0, -1,
+        -1, 0.5, 0.5, 1, 1, 0.5, 0.5, -1,
+        -1, 0, 1, 1, 1, 1, 0, -1,
+        -1, 1, 1, 1, 1, 1, 1, -1,
+        -1, 0.5, 0, 0, 0, 0, 0.5, -1,
+        -2, -1, -1, -1, -1, -1, -1, -2
+    ],
+    'R': [
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0.5, 1, 1, 1, 1, 1, 1, 0.5,
+        -0.5, 0, 0, 0, 0, 0, 0, -0.5,
+        -0.5, 0, 0, 0, 0, 0, 0, -0.5,
+        -0.5, 0, 0, 0, 0, 0, 0, -0.5,
+        -0.5, 0, 0, 0, 0, 0, 0, -0.5,
+        -0.5, 0, 0, 0, 0, 0, 0, -0.5,
+        0, 0, 0, 0.5, 0.5, 0, 0, 0
+    ],
+    'Q': [
+        -2, -1, -1, -0.5, -0.5, -1, -1, -2,
+        -1, 0, 0, 0, 0, 0, 0, -1,
+        -1, 0, 0.5, 0.5, 0.5, 0.5, 0, -1,
+        -0.5, 0, 0.5, 0.5, 0.5, 0.5, 0, -0.5,
+        0, 0, 0.5, 0.5, 0.5, 0.5, 0, -0.5,
+        -1, 0.5, 0.5, 0.5, 0.5, 0.5, 0, -1,
+        -1, 0, 0.5, 0, 0, 0, 0, -1,
+        -2, -1, -1, -0.5, -0.5, -1, -1, -2
+    ],
+    'K': [
+        -3, -4, -4, -5, -5, -4, -4, -3,
+        -3, -4, -4, -5, -5, -4, -4, -3,
+        -3, -4, -4, -5, -5, -4, -4, -3,
+        -3, -4, -4, -5, -5, -4, -4, -3,
+        -2, -3, -3, -4, -4, -3, -3, -2,
+        -1, -2, -2, -2, -2, -2, -2, -1,
+        2, 2, 0, 0, 0, 0, 2, 2,
+        2, 3, 1, 0, 0, 1, 3, 2
+    ],
+    'p': [-x for x in reversed([
+        0, 0, 0, 0, 0, 0, 0, 0,
+        5, 5, 5, 5, 5, 5, 5, 5,
+        1, 1, 2, 3, 3, 2, 1, 1,
+        0.5, 0.5, 1, 2.5, 2.5, 1, 0.5, 0.5,
+        0, 0, 0, 2, 2, 0, 0, 0,
+        0.5, -0.5, -1, 0, 0, -1, -0.5, 0.5,
+        0.5, 1, 1, -2, -2, 1, 1, 0.5,
+        0, 0, 0, 0, 0, 0, 0, 0
+    ])],
+    'n': [-x for x in reversed([
+        -5, -4, -3, -3, -3, -3, -4, -5,
+        -4, -2, 0, 0, 0, 0, -2, -4,
+        -3, 0, 1, 1.5, 1.5, 1, 0, -3,
+        -3, 0.5, 1.5, 2, 2, 1.5, 0.5, -3,
+        -3, 0, 1.5, 2, 2, 1.5, 0, -3,
+        -3, 0.5, 1, 1.5, 1.5, 1, 0.5, -3,
+        -4, -2, 0, 0.5, 0.5, 0, -2, -4,
+        -5, -4, -3, -3, -3, -3, -4, -5
+    ])],
+    'b': [-x for x in reversed([
+        -2, -1, -1, -1, -1, -1, -1, -2,
+        -1, 0, 0, 0, 0, 0, 0, -1,
+        -1, 0, 0.5, 1, 1, 0.5, 0, -1,
+        -1, 0.5, 0.5, 1, 1, 0.5, 0.5, -1,
+        -1, 0, 1, 1, 1, 1, 0, -1,
+        -1, 1, 1, 1, 1, 1, 1, -1,
+        -1, 0.5, 0, 0, 0, 0, 0.5, -1,
+        -2, -1, -1, -1, -1, -1, -1, -2
+    ])],
+    'r': [-x for x in reversed([
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0.5, 1, 1, 1, 1, 1, 1, 0.5,
+        -0.5, 0, 0, 0, 0, 0, 0, -0.5,
+        -0.5, 0, 0, 0, 0, 0, 0, -0.5,
+        -0.5, 0, 0, 0, 0, 0, 0, -0.5,
+        -0.5, 0, 0, 0, 0, 0, 0, -0.5,
+        -0.5, 0, 0, 0, 0, 0, 0, -0.5,
+        0, 0, 0, 0.5, 0.5, 0, 0, 0
+    ])],
+    'q': [-x for x in reversed([
+        -2, -1, -1, -0.5, -0.5, -1, -1, -2,
+        -1, 0, 0, 0, 0, 0, 0, -1,
+        -1, 0, 0.5, 0.5, 0.5, 0.5, 0, -1,
+        -0.5, 0, 0.5, 0.5, 0.5, 0.5, 0, -0.5,
+        0, 0, 0.5, 0.5, 0.5, 0.5, 0, -0.5,
+        -1, 0.5, 0.5, 0.5, 0.5, 0.5, 0, -1,
+        -1, 0, 0.5, 0, 0, 0, 0, -1,
+        -2, -1, -1, -0.5, -0.5, -1, -1, -2
+    ])],
+    'k': [-x for x in reversed([
+        -3, -4, -4, -5, -5, -4, -4, -3,
+        -3, -4, -4, -5, -5, -4, -4, -3,
+        -3, -4, -4, -5, -5, -4, -4, -3,
+        -3, -4, -4, -5, -5, -4, -4, -3,
+        -2, -3, -3, -4, -4, -3, -3, -2,
+        -1, -2, -2, -2, -2, -2, -2, -1,
+        2, 2, 0, 0, 0, 0, 2, 2,
+        2, 3, 1, 0, 0, 1, 3, 2
+    ])]
+}
+
 
 def minimax_agent(board):
     best_move = None
     best_value = float('-inf')
     alpha = float('-inf')
     beta = float('inf')
-    for move in board.legal_moves:
+    for move in order_moves(board, list(board.legal_moves)):
         board.push(move)
         board_value = minimax(board, 3, alpha, beta, False)
         board.pop()
@@ -337,6 +353,7 @@ def minimax_agent(board):
             best_value = board_value
             best_move = move
     return best_move
+
 
 class Node:
     def __init__(self, board, parent=None):
@@ -346,17 +363,28 @@ class Node:
         self.visits = 0
         self.wins = 0
 
-def select(node):
+def select(node, exploration_constant=1.41):
+    """
+    Selects the child node with the highest UCB1 value.
+    """
     while node.children:
-        node = max(node.children, key=lambda n: ucb1(n, node.visits))
+        node = max(node.children, key=lambda n: ucb1(n, node.visits, exploration_constant))
     return node
 
-def ucb1(node, parent_visits):
+def ucb1(node, parent_visits, exploration_constant):
+    """
+    Calculates the Upper Confidence Bound (UCB1) score.
+    """
     if node.visits == 0:
         return float('inf')
-    return node.wins / node.visits + math.sqrt(2 * math.log(parent_visits) / node.visits)
+    exploitation = node.wins / node.visits
+    exploration = exploration_constant * math.sqrt(math.log(parent_visits) / node.visits)
+    return exploitation + exploration
 
 def expand(node):
+    """
+    Expands the node by creating child nodes for all legal moves.
+    """
     legal_moves = list(node.board.legal_moves)
     for move in legal_moves:
         new_board = node.board.copy()
@@ -364,35 +392,71 @@ def expand(node):
         node.children.append(Node(new_board, node))
 
 def simulate(board):
+    """
+    Simulates a game from the current board state using heuristic evaluation.
+    """
     while not board.is_game_over():
         legal_moves = list(board.legal_moves)
         if not legal_moves:
             break
         move = random.choice(legal_moves)
         board.push(move)
+    
     if board.is_checkmate():
         return 1 if not board.turn else -1
-    return 0
+    if board.is_stalemate() or board.is_insufficient_material():
+        return 0
+    return heuristic_evaluate_board(board)
+
+def heuristic_evaluate_board(board):
+    """
+    Evaluates the board using a simple heuristic (material balance).
+    """
+    if board.is_checkmate():
+        return 1 if not board.turn else -1
+    elif board.is_stalemate() or board.is_insufficient_material():
+        return 0
+    return sum(piece_value[piece.symbol()] for piece in board.piece_map().values())
 
 def backpropagate(node, result):
+    """
+    Propagates the result of a simulation back up the tree.
+    """
     while node:
         node.visits += 1
         node.wins += result
         node = node.parent
 
-def mcts(board, iterations):
+def mcts(board, iterations, exploration_constant=1.41):
+    """
+    Performs Monte Carlo Tree Search on the given board state.
+    """
     root = Node(board)
     for _ in range(iterations):
-        node = select(root)
-        if not node.board.is_game_over():
+        # Selection
+        node = select(root, exploration_constant)
+        
+        # Expansion
+        if not node.board.is_game_over() and not node.children:
             expand(node)
+        
+        # Simulation
+        if node.children:
             node = random.choice(node.children)
         result = simulate(node.board.copy())
+        
+        # Backpropagation
         backpropagate(node, result)
-    return max(root.children, key=lambda n: n.visits).board.peek()
+    
+    # Return the move leading to the most visited child node
+    best_child = max(root.children, key=lambda n: n.visits)
+    return best_child.board.peek()
 
 def mcts_agent(board):
-    return mcts(board, 100)  # Adjust the number of iterations as needed
+    """
+    MCTS agent wrapper for gameplay.
+    """
+    return mcts(board, iterations=1000, exploration_constant=1.41)
 # Menu functions
 def draw_menu(scrn):
     scrn.fill(BLACK)
