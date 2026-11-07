@@ -73,6 +73,19 @@ SCHEDULE: list[tuple[str, str, int]] = [
     ("mcts@Medium", "sf1320", 12),
 ]
 
+# Quick Hard check (~10 min on 6 workers, games capped at HARD_MAX_PLIES).
+# Too few games to rate Hard on their own, so they update the extrapolated
+# estimate as a Bayesian prior instead (see fit_hard).
+HARD_SCHEDULE: list[tuple[str, str, int]] = [
+    ("negamax@Hard", "negamax@Medium", 2),
+    ("negamax@Hard", "sf2000", 2),
+    ("alphabeta@Hard", "alphabeta@Medium", 3),
+    ("mcts@Hard", "mcts@Medium", 3),
+    ("minimax@Hard", "minimax@Medium", 2),
+]
+HARD_MAX_PLIES = 100
+SCHEDULES = {"main": (SCHEDULE, 300), "hard": (HARD_SCHEDULE, HARD_MAX_PLIES)}
+
 
 def is_anchor(player: str) -> bool:
     return player.startswith("sf")
@@ -91,7 +104,7 @@ def make_player(player: str, seed: int):
 
 
 # --------------------------------------------------------------------- play
-def play_one(a: str, b: str, game_index: int) -> dict:
+def play_one(a: str, b: str, game_index: int, max_plies: int = 300) -> dict:
     """Play game ``game_index`` of pairing (a, b); runs in a worker process."""
     from .match import play_game, random_opening
 
@@ -102,7 +115,7 @@ def play_one(a: str, b: str, game_index: int) -> dict:
     start = time.time()
     try:
         white, black = (pa, pb) if a_white else (pb, pa)
-        result, reason, board = play_game(white, black, opening)
+        result, reason, board = play_game(white, black, opening, max_plies)
     finally:
         pa.close()
         pb.close()
@@ -121,15 +134,17 @@ def load_results() -> list[dict]:
         return [json.loads(line) for line in f if line.strip()]
 
 
-def run(workers: int) -> None:
+def run(workers: int, schedule: str = "main") -> None:
+    pairings, max_plies = SCHEDULES[schedule]
     RESULTS.parent.mkdir(exist_ok=True)
     done = {(r["a"], r["b"], r["game"]) for r in load_results()}
-    tasks = [(a, b, g) for a, b, n in SCHEDULE for g in range(n) if (a, b, g) not in done]
-    # Longest (Medium) games first so the pool finishes evenly.
-    tasks.sort(key=lambda t: ("Medium" in t[0]) + ("Medium" in t[1]), reverse=True)
+    tasks = [(a, b, g) for a, b, n in pairings for g in range(n) if (a, b, g) not in done]
+    # Longest games first so the pool finishes evenly.
+    weight = {"Hard": 3, "Medium": 1}
+    tasks.sort(key=lambda t: sum(w for d, w in weight.items() if d in t[0] + t[1]), reverse=True)
     print(f"{len(done)} games already played, {len(tasks)} to go, {workers} workers", flush=True)
     with ProcessPoolExecutor(max_workers=workers) as pool, RESULTS.open("a") as out:
-        futures = {pool.submit(play_one, *t): t for t in tasks}
+        futures = {pool.submit(play_one, *t, max_plies): t for t in tasks}
         for i, fut in enumerate(as_completed(futures), 1):
             rec = fut.result()
             out.write(json.dumps(rec) + "\n")
@@ -200,7 +215,36 @@ def fit(results: list[dict], iterations: int = 5000) -> dict[str, tuple[float, f
     return out
 
 
-def build_table(fitted: dict[str, tuple[float, float, int]], total_games: int) -> dict:
+def fit_hard(results: list[dict], fitted: dict, player: str, prior_mean: float, prior_sd: float):
+    """MAP rating for a Hard player: Gaussian prior (the extrapolation) times
+    the likelihood of its few games, with opponents fixed at their fitted Elo.
+    Returns (elo, 95% half-width, games) or None if it has no games."""
+    games = [r for r in results if player in (r["white"], r["black"])]
+    if not games:
+        return None
+    k = math.log(10) / 400
+    rating = prior_mean
+    hess = 1 / prior_sd**2
+    for _ in range(100):
+        grad = -(rating - prior_mean) / prior_sd**2
+        hess = 1 / prior_sd**2
+        for g in games:
+            other = g["black"] if g["white"] == player else g["white"]
+            opp = anchor_elo(other) if is_anchor(other) else fitted[other][0]
+            s = {"1-0": 1.0, "0-1": 0.0}.get(g["result"], 0.5)
+            mine = s if g["white"] == player else 1 - s
+            e = _expected(rating, opp)
+            grad += k * (mine - e)
+            hess += k * k * e * (1 - e)
+        step = grad / hess
+        rating += step
+        if abs(step) < 0.01:
+            break
+    return rating, 1.96 / math.sqrt(hess), len(games)
+
+
+def build_table(fitted: dict[str, tuple[float, float, int]], total_games: int,
+                results: list[dict] | None = None) -> dict:
     agents: dict[str, dict] = {}
     for key in FIXED:
         if key in fitted:
@@ -212,11 +256,15 @@ def build_table(fitted: dict[str, tuple[float, float, int]], total_games: int) -
             continue
         per_doubling = (medium[0] - easy[0]) / 2
         hard_doublings = math.log2(DIFFICULTIES["Hard"].time_limit / DIFFICULTIES["Medium"].time_limit)
+        hard_elo, hard_ci, hard_games = medium[0] + per_doubling * hard_doublings, medium[1] * 1.5, 0
+        measured = fit_hard(results or [], fitted, f"{key}@Hard", hard_elo, hard_ci / 1.96)
+        if measured is not None:
+            hard_elo, hard_ci, hard_games = measured
         agents[key] = {
             "Easy": {"elo": round(easy[0]), "ci": round(easy[1]), "games": easy[2], "estimated": False},
             "Medium": {"elo": round(medium[0]), "ci": round(medium[1]), "games": medium[2], "estimated": False},
-            "Hard": {"elo": round(medium[0] + per_doubling * hard_doublings), "ci": round(medium[1] * 1.5),
-                     "games": 0, "estimated": True},
+            # Still marked estimated: a handful of games refine the extrapolation.
+            "Hard": {"elo": round(hard_elo), "ci": round(hard_ci), "games": hard_games, "estimated": True},
         }
     agents["stockfish"] = {
         d: {"elo": DIFFICULTIES[d].stockfish_elo, "ci": 0, "games": 0, "estimated": False} for d in DIFFICULTIES
@@ -242,16 +290,25 @@ def main() -> None:
     sub = parser.add_subparsers(dest="cmd", required=True)
     p_run = sub.add_parser("run", help="play (or resume) the rating schedule")
     p_run.add_argument("--workers", type=int, default=6)
+    p_run.add_argument("--schedule", choices=list(SCHEDULES), default="main")
     sub.add_parser("fit", help="fit ratings from results and write chess_ai/ratings.json")
     args = parser.parse_args()
     if args.cmd == "run":
-        run(args.workers)
+        run(args.workers, args.schedule)
     else:
         results = load_results()
-        fitted = fit(results)
+        # Hard games are too few for the joint fit; they refine the
+        # extrapolated Hard estimate in build_table instead.
+        main_results = [r for r in results if "@Hard" not in r["white"] + r["black"]]
+        fitted = fit(main_results)
         for p, (elo, ci, n) in sorted(fitted.items(), key=lambda kv: kv[1][0]):
             print(f"{p:20} {elo:7.0f} +/- {ci:4.0f}  ({n} games)")
-        RATINGS_JSON.write_text(json.dumps(build_table(fitted, len(results)), indent=2) + "\n")
+        table = build_table(fitted, len(results), results)
+        for key, row in table["agents"].items():
+            if key in TIME_SCALED and row["Hard"]["games"]:
+                print(f"{key + '@Hard':20} {row['Hard']['elo']:7d} +/- {row['Hard']['ci']:4d}  "
+                      f"({row['Hard']['games']} games + extrapolation prior)")
+        RATINGS_JSON.write_text(json.dumps(table, indent=2) + "\n")
         print(f"wrote {RATINGS_JSON}")
 
 

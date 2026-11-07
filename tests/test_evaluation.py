@@ -94,6 +94,17 @@ def test_rating_fit_recovers_known_gap():
     assert n == 200 and 0 < ci < 100
 
 
+def test_fit_hard_updates_prior_modestly():
+    from chess_ai.rating import fit_hard
+
+    fitted = {"x@Medium": (1500.0, 100.0, 50)}
+    assert fit_hard([], fitted, "x@Hard", 1600, 100) is None
+    # Two wins against a 1500 opponent move a 1600 prior up, but not to infinity.
+    wins = [{"white": "x@Hard", "black": "x@Medium", "result": "1-0"}] * 2
+    elo, ci, n = fit_hard(wins, fitted, "x@Hard", 1600, 100)
+    assert 1600 < elo < 1800 and n == 2 and ci < 1.96 * 100
+
+
 def test_format_score():
     assert format_score(125) == "+1.25"
     assert format_score(MATE - 1) == "+M1"

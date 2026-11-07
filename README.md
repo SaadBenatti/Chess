@@ -48,13 +48,20 @@ There is no opening book and no endgame table. Every move is found by search.
 | --- | --- | --- | --- |
 | Random | ~100 | ~100 | ~100 |
 | Greedy | 607 ± 160 | 607 ± 160 | 607 ± 160 |
-| MCTS | 575 ± 150 | 976 ± 196 | ~1241 |
-| Minimax | 1058 ± 132 | 1092 ± 134 | ~1114 |
-| Alpha-Beta | 1327 ± 111 | 1502 ± 115 | ~1617 |
-| Negamax | 1641 ± 140 | 1840 ± 126 | ~1971 |
+| MCTS | 575 ± 150 | 976 ± 196 | ~1244 ± 255 |
+| Minimax | 1058 ± 132 | 1092 ± 134 | ~1111 ± 186 |
+| Alpha-Beta | 1327 ± 111 | 1502 ± 115 | ~1618 ± 159 |
+| Negamax | 1641 ± 140 | 1840 ± 126 | ~2001 ± 167 |
 | Stockfish (limited) | 1320 | 1800 | 2400 |
 
-These come from 264 games played on 2026-11-06. The ± figures are 95% intervals, and ~ marks an extrapolated value. Random only played Greedy and lost every game, so its number is a rough floor, not a measurement.
+These come from 276 games played on 2026-11-06. The ± figures are 95% intervals. Random only played Greedy and lost every game, so its number is a rough floor, not a measurement.
+
+Hard (~) is a quick estimate:
+- The starting point is the gain each AI made per doubling of thinking time between Easy and Medium.
+- That starting point is then refined with 2–4 Hard games per AI, capped at 100 plies, as a Bayesian update.
+- Negamax at Hard drew and won against Stockfish limited to 2000.
+
+To measure Hard properly, give it a full schedule.
 
 What the table shows:
 - Each search technique is clearly stronger than the one before it: Minimax → Alpha-Beta → Negamax.
@@ -67,7 +74,8 @@ These ratings come from games against Stockfish limited with `UCI_Elo`, plus gam
 To regenerate them (this takes a few hours of CPU time, and a run can be resumed):
 
 ```
-.venv\Scripts\python -m chess_ai.rating run --workers 6
+.venv\Scripts\python -m chess_ai.rating run --workers 6                   # Easy/Medium schedule (~2 h)
+.venv\Scripts\python -m chess_ai.rating run --workers 6 --schedule hard   # quick Hard check (~12 min)
 .venv\Scripts\python -m chess_ai.rating fit
 ```
 

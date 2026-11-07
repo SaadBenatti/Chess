@@ -1,7 +1,7 @@
 {
   "scale": "Stockfish UCI_Elo anchors at fast time control (not FIDE)",
   "generated": "2026-11-06",
-  "total_games": 264,
+  "total_games": 276,
   "agents": {
     "random": {
       "Easy": {
@@ -57,9 +57,9 @@
         "estimated": false
       },
       "Hard": {
-        "elo": 1114,
-        "ci": 202,
-        "games": 0,
+        "elo": 1111,
+        "ci": 186,
+        "games": 2,
         "estimated": true
       }
     },
@@ -77,9 +77,9 @@
         "estimated": false
       },
       "Hard": {
-        "elo": 1617,
-        "ci": 172,
-        "games": 0,
+        "elo": 1618,
+        "ci": 159,
+        "games": 3,
         "estimated": true
       }
     },
@@ -97,9 +97,9 @@
         "estimated": false
       },
       "Hard": {
-        "elo": 1971,
-        "ci": 189,
-        "games": 0,
+        "elo": 2001,
+        "ci": 167,
+        "games": 4,
         "estimated": true
       }
     },
@@ -117,9 +117,9 @@
         "estimated": false
       },
       "Hard": {
-        "elo": 1241,
-        "ci": 294,
-        "games": 0,
+        "elo": 1244,
+        "ci": 255,
+        "games": 3,
         "estimated": true
       }
     },

@@ -262,3 +262,15 @@
 {"a": "negamax@Easy", "b": "sf1320", "game": 14, "white": "negamax@Easy", "black": "sf1320", "result": "1-0", "reason": "checkmate", "plies": 67, "seconds": 32.5}
 {"a": "negamax@Easy", "b": "sf1320", "game": 15, "white": "sf1320", "black": "negamax@Easy", "result": "0-1", "reason": "checkmate", "plies": 62, "seconds": 28.2}
 {"a": "negamax@Easy", "b": "sf1320", "game": 13, "white": "sf1320", "black": "negamax@Easy", "result": "1/2-1/2", "reason": "threefold_repetition", "plies": 148, "seconds": 76.0}
+{"a": "alphabeta@Hard", "b": "alphabeta@Medium", "game": 2, "white": "alphabeta@Hard", "black": "alphabeta@Medium", "result": "1/2-1/2", "reason": "threefold_repetition", "plies": 30, "seconds": 98.5}
+{"a": "mcts@Hard", "b": "mcts@Medium", "game": 0, "white": "mcts@Hard", "black": "mcts@Medium", "result": "1/2-1/2", "reason": "adjudicated (+207cp)", "plies": 100, "seconds": 344.1}
+{"a": "negamax@Hard", "b": "negamax@Medium", "game": 0, "white": "negamax@Hard", "black": "negamax@Medium", "result": "1/2-1/2", "reason": "adjudicated (-70cp)", "plies": 100, "seconds": 344.2}
+{"a": "alphabeta@Hard", "b": "alphabeta@Medium", "game": 1, "white": "alphabeta@Medium", "black": "alphabeta@Hard", "result": "1/2-1/2", "reason": "adjudicated (+184cp)", "plies": 100, "seconds": 344.4}
+{"a": "alphabeta@Hard", "b": "alphabeta@Medium", "game": 0, "white": "alphabeta@Hard", "black": "alphabeta@Medium", "result": "1-0", "reason": "adjudicated (+1108cp)", "plies": 100, "seconds": 344.5}
+{"a": "negamax@Hard", "b": "negamax@Medium", "game": 1, "white": "negamax@Medium", "black": "negamax@Hard", "result": "0-1", "reason": "adjudicated (-703cp)", "plies": 100, "seconds": 344.5}
+{"a": "mcts@Hard", "b": "mcts@Medium", "game": 1, "white": "mcts@Medium", "black": "mcts@Hard", "result": "0-1", "reason": "adjudicated (-1701cp)", "plies": 100, "seconds": 344.1}
+{"a": "minimax@Hard", "b": "minimax@Medium", "game": 1, "white": "minimax@Medium", "black": "minimax@Hard", "result": "0-1", "reason": "checkmate", "plies": 36, "seconds": 110.7}
+{"a": "negamax@Hard", "b": "sf2000", "game": 1, "white": "sf2000", "black": "negamax@Hard", "result": "1/2-1/2", "reason": "threefold_repetition", "plies": 87, "seconds": 228.2}
+{"a": "negamax@Hard", "b": "sf2000", "game": 0, "white": "negamax@Hard", "black": "sf2000", "result": "1-0", "reason": "adjudicated (+411cp)", "plies": 100, "seconds": 270.6}
+{"a": "minimax@Hard", "b": "minimax@Medium", "game": 0, "white": "minimax@Hard", "black": "minimax@Medium", "result": "0-1", "reason": "checkmate", "plies": 96, "seconds": 322.0}
+{"a": "mcts@Hard", "b": "mcts@Medium", "game": 2, "white": "mcts@Hard", "black": "mcts@Medium", "result": "1-0", "reason": "adjudicated (+621cp)", "plies": 100, "seconds": 344.1}
