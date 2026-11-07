@@ -16,7 +16,7 @@ class RandomAgent(Agent):
 
     name = "Random"
 
-    def __init__(self, seed: int | None = None, **_ignored) -> None:
+    def __init__(self, seed: int | None = None) -> None:
         super().__init__()
         self.rng = random.Random(seed)
 
@@ -25,7 +25,7 @@ class RandomAgent(Agent):
         if not moves:
             return None
         move = self.rng.choice(moves)
-        self.last_stats = SearchStats(move=board.san(move), depth=0, nodes=0)
+        self.last_stats = SearchStats(move=board.san(move), pv=[board.san(move)])
         return move
 
 
@@ -38,7 +38,7 @@ class GreedyAgent(Agent):
 
     name = "Greedy"
 
-    def __init__(self, seed: int | None = None, **_ignored) -> None:
+    def __init__(self, seed: int | None = None) -> None:
         super().__init__()
         self.rng = random.Random(seed)
 
@@ -46,7 +46,8 @@ class GreedyAgent(Agent):
         board = board.copy()
         start = time.perf_counter()
         best, best_moves = None, []
-        for move in board.legal_moves:
+        moves = list(board.legal_moves)
+        for move in moves:
             board.push(move)
             if board.is_checkmate():
                 score = MATE - 1  # mate in one ply
@@ -65,8 +66,9 @@ class GreedyAgent(Agent):
         self.last_stats = SearchStats(
             move=board.san(move),
             depth=1,
-            nodes=board.legal_moves.count(),
+            nodes=len(moves),
             time=time.perf_counter() - start,
             score=best if board.turn == chess.WHITE else -best,
+            pv=[board.san(move)],
         )
         return move

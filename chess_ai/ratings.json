@@ -1,0 +1,147 @@
+{
+  "scale": "Stockfish UCI_Elo anchors at fast time control (not FIDE)",
+  "generated": "2026-11-06",
+  "total_games": 264,
+  "agents": {
+    "random": {
+      "Easy": {
+        "elo": 115,
+        "ci": 495,
+        "games": 8,
+        "estimated": false
+      },
+      "Medium": {
+        "elo": 115,
+        "ci": 495,
+        "games": 8,
+        "estimated": false
+      },
+      "Hard": {
+        "elo": 115,
+        "ci": 495,
+        "games": 8,
+        "estimated": false
+      }
+    },
+    "greedy": {
+      "Easy": {
+        "elo": 607,
+        "ci": 160,
+        "games": 32,
+        "estimated": false
+      },
+      "Medium": {
+        "elo": 607,
+        "ci": 160,
+        "games": 32,
+        "estimated": false
+      },
+      "Hard": {
+        "elo": 607,
+        "ci": 160,
+        "games": 32,
+        "estimated": false
+      }
+    },
+    "minimax": {
+      "Easy": {
+        "elo": 1058,
+        "ci": 132,
+        "games": 48,
+        "estimated": false
+      },
+      "Medium": {
+        "elo": 1092,
+        "ci": 134,
+        "games": 36,
+        "estimated": false
+      },
+      "Hard": {
+        "elo": 1114,
+        "ci": 202,
+        "games": 0,
+        "estimated": true
+      }
+    },
+    "alphabeta": {
+      "Easy": {
+        "elo": 1327,
+        "ci": 111,
+        "games": 60,
+        "estimated": false
+      },
+      "Medium": {
+        "elo": 1502,
+        "ci": 115,
+        "games": 64,
+        "estimated": false
+      },
+      "Hard": {
+        "elo": 1617,
+        "ci": 172,
+        "games": 0,
+        "estimated": true
+      }
+    },
+    "negamax": {
+      "Easy": {
+        "elo": 1641,
+        "ci": 140,
+        "games": 40,
+        "estimated": false
+      },
+      "Medium": {
+        "elo": 1840,
+        "ci": 126,
+        "games": 56,
+        "estimated": false
+      },
+      "Hard": {
+        "elo": 1971,
+        "ci": 189,
+        "games": 0,
+        "estimated": true
+      }
+    },
+    "mcts": {
+      "Easy": {
+        "elo": 575,
+        "ci": 150,
+        "games": 48,
+        "estimated": false
+      },
+      "Medium": {
+        "elo": 976,
+        "ci": 196,
+        "games": 36,
+        "estimated": false
+      },
+      "Hard": {
+        "elo": 1241,
+        "ci": 294,
+        "games": 0,
+        "estimated": true
+      }
+    },
+    "stockfish": {
+      "Easy": {
+        "elo": 1320,
+        "ci": 0,
+        "games": 0,
+        "estimated": false
+      },
+      "Medium": {
+        "elo": 1800,
+        "ci": 0,
+        "games": 0,
+        "estimated": false
+      },
+      "Hard": {
+        "elo": 2400,
+        "ci": 0,
+        "games": 0,
+        "estimated": false
+      }
+    }
+  }
+}

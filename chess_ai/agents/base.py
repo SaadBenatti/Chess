@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import threading
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import chess
 
@@ -17,6 +17,7 @@ class SearchStats:
     time: float = 0.0       # seconds spent
     score: int | None = None  # centipawns from White's point of view
     note: str = ""          # agent-specific extra info (e.g. MCTS win rate)
+    pv: list[str] = field(default_factory=list)  # expected line in SAN, starting with `move`
 
     @property
     def nps(self) -> int:
@@ -40,3 +41,15 @@ class Agent:
 
     def close(self) -> None:
         """Release external resources (engine processes)."""
+
+
+def san_line(board: chess.Board, moves: list[chess.Move]) -> list[str]:
+    """Convert a list of moves played from ``board`` into SAN strings."""
+    board = board.copy(stack=False)
+    line = []
+    for move in moves:
+        if move not in board.legal_moves:
+            break
+        line.append(board.san(move))
+        board.push(move)
+    return line

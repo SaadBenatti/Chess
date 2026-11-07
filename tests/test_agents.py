@@ -3,6 +3,7 @@ import pytest
 
 from chess_ai.agents import AGENTS, available_agents, create_agent
 from chess_ai.agents.alphabeta import AlphaBetaAgent
+from chess_ai.agents.mcts import MCTSAgent, Node
 from chess_ai.agents.minimax import MinimaxAgent
 from chess_ai.agents.stockfish import find_stockfish
 from tests.test_evaluation import random_positions
@@ -59,6 +60,64 @@ def test_finds_mate_in_two(key, fen, mirror):
     assert agent.last_stats.score is not None and abs(agent.last_stats.score) > 90_000
 
 
+@pytest.mark.parametrize("mirror", [False, True])
+def test_mcts_solver_proves_mate_in_two(mirror):
+    board = chess.Board(MATE_IN_TWO[0])
+    if mirror:
+        board = board.mirror()
+    agent = MCTSAgent(time_limit=10.0, seed=1)
+    move = agent.choose_move(board)
+    assert is_forced_mate_in_two(board, move)
+    assert agent.last_stats.note.startswith("proven win")
+    assert agent.last_stats.time < 10.0  # the solver stops as soon as the root is proven
+
+
+def test_mcts_tree_reuse_survives_unexplored_reply_and_new_game():
+    agent = MCTSAgent(time_limit=0.3, seed=1)
+    board = chess.Board()
+    for _ in range(3):
+        board.push(agent.choose_move(board))
+        board.push(list(board.legal_moves)[-1])  # a reply the tree may not have explored
+        assert agent.choose_move(board) in board.legal_moves
+    fresh = chess.Board()  # unrelated position: must not reuse the old tree
+    assert agent.choose_move(fresh) in fresh.legal_moves
+    assert "reused" not in agent.last_stats.note
+
+
+def test_mcts_reuses_subtree_after_expected_reply():
+    agent = MCTSAgent(time_limit=0.5, seed=1)
+    board = chess.Board()
+    first = agent.choose_move(board)
+    board.push(first)
+    child = next(c for c in agent._last_root.children if c.move == first)
+    reply = max(child.children, key=lambda c: c.visits)
+    board.push(reply.move)
+    expected_visits = reply.visits
+    move = agent.choose_move(board)
+    assert move in board.legal_moves
+    assert f"reused {expected_visits}" in agent.last_stats.note
+
+
+def test_mcts_reuse_of_terminal_marked_leaf():
+    # Regression: a reused leaf that the old search had marked terminal (no
+    # children) must be re-expanded instead of crashing on the next move.
+    agent = MCTSAgent(time_limit=0.2, seed=1)
+    board = chess.Board()
+    agent.choose_move(board)
+    child = agent._last_root.children[0]
+    board.push(child.move)
+    reply = next(m for m in board.legal_moves if all(g.move != m for g in child.children))
+    leaf = Node(reply, child)
+    leaf.untried = []  # marked terminal by the old search, never expanded
+    child.children.append(leaf)
+    board.push(reply)
+    for _ in range(3):
+        move = agent.choose_move(board)
+        assert move in board.legal_moves
+        board.push(move)
+        board.push(next(iter(board.legal_moves)))
+
+
 @pytest.mark.parametrize("key", MINIMAX_FAMILY)
 def test_takes_free_queen(key):
     board = chess.Board("4k3/8/8/8/3q4/5N2/8/4K3 w - - 0 1")
@@ -110,7 +169,7 @@ def test_game_over_returns_none(key):
 @pytest.mark.skipif(find_stockfish() is None, reason="Stockfish not installed")
 def test_stockfish_plays():
     assert "stockfish" in available_agents()
-    agent = create_agent("stockfish", time_limit=0.1, skill_level=1)
+    agent = create_agent("stockfish", time_limit=0.1, stockfish_elo=1320)
     try:
         board = chess.Board()
         assert agent.choose_move(board) in board.legal_moves

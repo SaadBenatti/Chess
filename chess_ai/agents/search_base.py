@@ -14,7 +14,7 @@ import time
 import chess
 
 from ..evaluation import MATE_THRESHOLD
-from .base import Agent, SearchStats
+from .base import Agent, SearchStats, san_line
 
 INF = 10**9
 
@@ -35,6 +35,7 @@ class IterativeDeepeningAgent(Agent):
         self._deadline = 0.0
         self._stop: threading.Event | None = None
         self._can_abort = False
+        self.last_pv: list[chess.Move] = []  # subclasses may fill this in search_root
 
     # -- hooks -------------------------------------------------------------
     def search_root(self, board: chess.Board, depth: int, prev_best: chess.Move | None) -> tuple[chess.Move, int]:
@@ -71,16 +72,19 @@ class IterativeDeepeningAgent(Agent):
 
         best_move: chess.Move | None = None
         best_score: int | None = None
+        best_pv: list[chess.Move] = []
         completed = 0
         for depth in range(1, self.max_depth + 1):
             # Depth 1 always finishes so there is always a sensible move.
             self._can_abort = depth > 1
             try:
                 # Fresh copy per depth: a timeout leaves pushed moves behind.
+                self.last_pv = []
                 move, score = self.search_root(board.copy(), depth, best_move)
             except SearchTimeout:
                 break
             best_move, best_score, completed = move, score, depth
+            best_pv = self.last_pv or [move]
             if abs(score) >= MATE_THRESHOLD:
                 break  # forced mate found; deeper search will not change it
             if time.perf_counter() >= self._deadline or (stop_event is not None and stop_event.is_set()):
@@ -92,5 +96,6 @@ class IterativeDeepeningAgent(Agent):
             nodes=self.nodes,
             time=time.perf_counter() - start,
             score=best_score,
+            pv=san_line(board, best_pv),
         )
         return best_move
