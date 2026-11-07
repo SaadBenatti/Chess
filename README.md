@@ -1,30 +1,41 @@
 # Chess AI
 
-A chess game in Python for playing against different AI search techniques, from plain minimax up to an enhanced negamax and Monte Carlo tree search. You can see how strong each one is: the menu shows an estimated Elo for every AI at every difficulty, and while it plays, the side panel shows its search depth, positions searched, evaluation and expected line.
+A chess game in Python for playing against classic game-tree search algorithms, from plain minimax through alpha-beta and an enhanced negamax to Monte Carlo tree search. You can see how strong each one is: every AI has an estimated Elo rating, and while it plays, a side panel shows what it is thinking.
 
-You can also watch two AIs play each other, or play another person on the same computer.
+You can play against any AI, watch two AIs play each other, or play another person on the same computer.
 
-## Running
+## Getting started
+
+You need Python 3.10 or newer.
 
 ```
-py -3.12 -m venv .venv
-.venv\Scripts\pip install -r requirements.txt
-.venv\Scripts\python main.py
+git clone https://github.com/SaadBenatti/Chess.git
+cd Chess
+pip install -r requirements.txt
+python main.py
 ```
 
-In the menu, pick a player for White and a player for Black (a human or any AI), choose a difficulty, then click **Start**. When you play Black against an AI, the board is shown from Black's side.
+## How to play
+
+1. In the menu, choose a player for **White** and for **Black**: a human or any of the AIs.
+2. Choose a **difficulty**, then click **Start**.
+3. Click a piece to see its legal moves, then click the square to move it to. When a pawn promotes, choose the new piece from the picker.
+
+If you play Black against an AI, the board turns so your pieces are at the bottom.
 
 | Key | Action |
 | --- | --- |
-| Click | Select a piece, then click a target square. For a promotion, click the piece you want. |
-| H | Hint: a 1-second negamax search draws its suggested move as a green arrow |
-| U | Undo your last move, and the AI's reply to it |
+| H | Hint: draws a suggested move as a green arrow |
+| U | Undo your last move (and the AI's reply) |
 | R | Restart with the same players |
 | M / Esc | Back to the menu |
 
-The difficulty sets how long each AI thinks per move: 0.5 s on Easy, 2 s on Medium, 5 s on Hard. Stockfish is the exception; it uses its own Elo limiter (1320 on Easy, 1800 on Medium, 2400 on Hard).
+**Difficulty** sets how long each AI thinks per move: 0.5 s on Easy, 2 s on Medium, 5 s on Hard. The Stockfish opponent uses its built-in strength limiter instead.
 
-On the board, an orange arrow shows the AI's last move and the bar beside the board shows the latest evaluation. The side panel shows each AI's last search: the depth it reached, the positions searched (and searched per second), the time taken, the evaluation, and the line of play it expects (its principal variation).
+While an AI plays:
+- An orange arrow marks its last move.
+- The bar beside the board shows its evaluation.
+- The side panel shows its search depth, positions searched, thinking time, evaluation, and the line of play it expects.
 
 ## The AIs
 
@@ -32,62 +43,58 @@ On the board, an orange arrow shows the AI's last move and the bar beside the bo
 | --- | --- |
 | Random | Plays a random legal move. |
 | Greedy | Looks one move ahead and takes whatever scores best right now. |
-| Minimax | Textbook minimax: White maximizes the score and Black minimizes it, and every move is searched. |
-| Alpha-Beta | Minimax plus alpha-beta pruning and captures-first move ordering. It finds the same move as minimax but searches far fewer positions. |
-| Negamax | Alpha-beta in negamax form with principal-variation search, aspiration windows, null-move pruning, late-move reductions, quiescence search, a transposition table, killer/history move ordering and check extensions. |
-| MCTS | Monte Carlo tree search (UCT) with an MCTS-Solver that proves forced wins and losses, tree reuse between moves, mating moves expanded first, and short playouts scored by the evaluation. |
-| Stockfish | The real engine, used as a reference opponent with a calibrated Elo. It's optional; see below. |
+| Minimax | Textbook minimax: searches every move, with White maximizing the score and Black minimizing it. |
+| Alpha-Beta | Minimax with alpha-beta pruning and captures-first move ordering. It finds the same moves as minimax while searching far fewer positions. |
+| Negamax | Alpha-beta in negamax form, with principal-variation search, aspiration windows, null-move pruning, quiescence search, a transposition table, killer/history move ordering and check extensions. |
+| MCTS | Monte Carlo tree search (UCT) with an MCTS-Solver that proves forced wins and losses, tree reuse between moves, and short playouts scored by the evaluation function. |
+| Stockfish | Optional: the real engine, used as a reference opponent with a calibrated strength (see below). |
 
-Every search AI uses the same evaluation function: tapered middlegame/endgame scoring with material, piece-square tables, passed/doubled/isolated pawns, the bishop pair, rooks on open files, mobility and a king pawn shield. Every AI also gets the same thinking time, so differences in strength come from the search itself. In 2 seconds from the starting position, minimax reaches depth 3, alpha-beta depth 4 and negamax depth 6.
+All the search AIs share one evaluation function. It scores material, piece placement, pawn structure (passed, doubled and isolated pawns), the bishop pair, rooks on open files, piece mobility and king safety, and it blends middlegame and endgame scoring as pieces come off the board.
 
-There is no opening book and no endgame table. Every move is found by search.
+Every AI also gets the same thinking time, so differences in strength come from the search algorithm itself. There is no opening book and no endgame table; every move is found by search.
 
-## Elo ratings
+## How strong are they?
 
-| AI | Easy (0.5 s) | Medium (2 s) | Hard (5 s) |
+Approximate Elo ratings by difficulty:
+
+| AI | Easy | Medium | Hard |
 | --- | --- | --- | --- |
 | Random | ~100 | ~100 | ~100 |
-| Greedy | 607 ± 160 | 607 ± 160 | 607 ± 160 |
-| MCTS | 575 ± 150 | 976 ± 196 | ~1244 ± 255 |
-| Minimax | 1058 ± 132 | 1092 ± 134 | ~1111 ± 186 |
-| Alpha-Beta | 1327 ± 111 | 1502 ± 115 | ~1618 ± 159 |
-| Negamax | 1641 ± 140 | 1840 ± 126 | ~2001 ± 167 |
+| Greedy | ~600 | ~600 | ~600 |
+| MCTS | ~575 | ~975 | ~1250 |
+| Minimax | ~1050 | ~1100 | ~1100 |
+| Alpha-Beta | ~1325 | ~1500 | ~1600 |
+| Negamax | ~1650 | ~1850 | ~2000 |
 | Stockfish (limited) | 1320 | 1800 | 2400 |
 
-These come from 276 games played on 2026-11-06. The ± figures are 95% intervals. Random only played Greedy and lost every game, so its number is a rough floor, not a measurement.
+The ratings come from games against Stockfish, using its calibrated Elo limiter, and from games between the AIs, fitted with an Elo (Bradley-Terry) model. They're a yardstick for comparing the AIs, not official FIDE ratings, and the Hard ratings are less certain than the others.
 
-Hard (~) is a quick estimate:
-- The starting point is the gain each AI made per doubling of thinking time between Easy and Medium.
-- That starting point is then refined with 2–4 Hard games per AI, capped at 100 plies, as a Bayesian update.
-- Negamax at Hard drew and won against Stockfish limited to 2000.
+What the ratings show:
+- **Each step up the minimax family is worth hundreds of Elo.** Pruning and better move ordering let the same evaluation look much deeper in the same time.
+- **Plain minimax barely improves with more time.** Its search tree grows so fast that even several times more time rarely buys another full move of depth.
+- **MCTS is the weakest search here.** With random playouts it struggles in chess. MCTS is at its best with a learned evaluation, as in AlphaZero.
 
-To measure Hard properly, give it a full schedule.
-
-What the table shows:
-- Each search technique is clearly stronger than the one before it: Minimax → Alpha-Beta → Negamax.
-- Pruning lets the same evaluation search deeper in the same time, and that's worth hundreds of Elo.
-- Plain minimax barely gains from extra time, because its tree grows so fast that 4× the time doesn't buy another full ply.
-- MCTS with random playouts is the weakest search in chess. That's a known result: MCTS shines when it has a learned evaluation, as in AlphaZero.
-
-These ratings come from games against Stockfish limited with `UCI_Elo`, plus games between the AIs, fitted with a Bradley-Terry (Elo) model (`chess_ai/rating.py`). AIs too weak to score against Stockfish are rated by chaining through games against stronger AIs. Hard (marked ~) is extrapolated from the Elo gained between Easy and Medium per doubling of thinking time. The numbers are relative to Stockfish's fast-time-control calibration, so treat them as a yardstick, not official FIDE ratings.
-
-To regenerate them (this takes a few hours of CPU time, and a run can be resumed):
+To regenerate the ratings (this takes a few hours, and an interrupted run resumes where it left off):
 
 ```
-.venv\Scripts\python -m chess_ai.rating run --workers 6                   # Easy/Medium schedule (~2 h)
-.venv\Scripts\python -m chess_ai.rating run --workers 6 --schedule hard   # quick Hard check (~12 min)
-.venv\Scripts\python -m chess_ai.rating fit
+python -m chess_ai.rating run --workers 6
+python -m chess_ai.rating run --workers 6 --schedule hard
+python -m chess_ai.rating fit
 ```
 
 ## Stockfish (optional)
 
-Download Stockfish from [stockfishchess.org](https://stockfishchess.org/download/) and extract it into `tools/` (which is gitignored), or set `STOCKFISH_PATH`. Without it, the Stockfish opponent is hidden and its test is skipped.
+To play against Stockfish, or to regenerate the ratings, download it from [stockfishchess.org](https://stockfishchess.org/download/). Then either extract it into a `tools/` folder in the project, or set the `STOCKFISH_PATH` environment variable to the executable. Without Stockfish, everything else works and the Stockfish opponent is simply hidden.
 
-## Tests and AI-vs-AI matches
+## Development
 
 ```
-.venv\Scripts\python -m pytest
-.venv\Scripts\python -m chess_ai.match negamax alphabeta -n 10 --time 1
+python -m pytest                                         # run the tests
+python -m chess_ai.match negamax alphabeta -n 10 --time 1   # AI-vs-AI match from the command line
 ```
 
-The match runner plays games in pairs from the same random opening, with the colours swapped between the two games. It prints each result and why the game ended.
+Project layout:
+- `chess_ai/agents/` holds one module per AI.
+- `chess_ai/evaluation.py` is the shared evaluation function.
+- `chess_ai/gui.py` is the Pygame interface.
+- `chess_ai/rating.py` measures the Elo ratings.
