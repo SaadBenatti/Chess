@@ -1,0 +1,12 @@
+# Local assistant notes
+CLAUDE.md
+HANDOFF.md
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# Downloaded engine binaries
+tools/
